@@ -3,17 +3,36 @@ import React from 'react';
 import { Button, Divider, TextInput } from 'react-native-paper';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
+import { firebaseAuth } from '../../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useStore } from '../../zustandStore/store';
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const validationSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email address').required('Email is required'),
     password: Yup.string().required('Password is required'),
   });
+  const { setLoginUser } = useStore();
+
+  const auth = firebaseAuth;
 
   const handleShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleSubmitForm = async (values) => {
+    setIsLoading(true);
+    try {
+      const response = await signInWithEmailAndPassword(auth, values.email, values.password);
+      setIsLoading(false);
+      router.push('marketplace');
+    } catch (error) {
+      alert(error.message);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -22,7 +41,7 @@ const LoginForm = () => {
         initialValues={{ email: '', password: '' }}
         validationSchema={validationSchema}
         onSubmit={(values) => {
-          console.log('Form values:', values);
+          handleSubmitForm(values);
         }}
       >
         {({ handleChange, handleSubmit, values, errors, touched }) => (
@@ -50,7 +69,12 @@ const LoginForm = () => {
             />
 
             <View style={{ alignItems: 'center' }}>
-              <Button mode='contained' style={{ width: 250, borderRadius: 10, backgroundColor: '#7ED4AD', marginTop: 40 }} onPress={handleSubmit}>
+              <Button
+                mode='contained'
+                style={{ width: 250, borderRadius: 10, backgroundColor: '#7ED4AD', marginTop: 40 }}
+                onPress={handleSubmit}
+                loading={isLoading}
+              >
                 <Text style={{ color: 'white', fontWeight: 'bold' }}>Login</Text>
               </Button>
               <Link href={''} style={{ marginTop: 20 }}>
